@@ -18,6 +18,8 @@ __all__ = [
     "advance_docs",
     "update_doc_config",
     "multi_api_key",
+    "wolai_token",
+    "wolai_database_id"
 ]
 
 # 添加一个统一的config文件，避免文件过多造成的疑惑（优先级最低）
@@ -141,3 +143,10 @@ def update_doc_config(two_column_pdf):
         advance_docs["pdf"]["two_column"] = True
     
     logging.info(f"更新后的文件参数为：{advance_docs}")
+
+
+## wolai api
+wolai_token = config.get("wolai_token", "")
+wolai_token = os.environ.get("WOLAI_TOKEN", wolai_token)
+wolai_database_id = config.get("wolai_database_id", "")
+wolai_database_id = os.environ.get("WOLAI_DATABASE_ID", wolai_database_id)

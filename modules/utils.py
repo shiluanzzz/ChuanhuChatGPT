@@ -441,7 +441,6 @@ def transfer_input(inputs):
     )
 
 
-
 def run(command, desc=None, errdesc=None, custom_env=None, live=False):
     if desc is not None:
         print(desc)
@@ -498,3 +497,89 @@ def add_details(lst):
             f"<details><summary>{brief}...</summary><p>{txt}</p></details>"
         )
     return nodes
+
+
+def insert_wolai_page_blocks(token: str, page_id: str, blocks: list):
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': token
+    }
+    content = {
+        "parent_id": page_id,
+        "blocks": blocks
+    }
+    # 一次最多插入20个block
+    if len(blocks) > 20:
+        logging.error("wolai 一次性插入块过多，上限20")
+        return False
+    block_url = "https://openapi.wolai.com/v1/blocks"
+    response = requests.request("POST", block_url, headers=headers, data=json.dumps(content))
+
+    if response.raise_for_status():
+        logging.error("wolai- [{}] -从响应中解析page_id失败 Msg:{}".format(response.status_code, response.text))
+        return False
+    else:
+        return True
+
+
+def export_wolai(token, database_id, filename, system, history, chatbot, user_name):
+    logging.info(f"{user_name} 保存对话历史到wolai中……")
+    url = "https://openapi.wolai.com/v1/databases/{}/rows".format(database_id)
+    payload = {
+        "rows": [
+            {
+                "标题": filename,
+            }
+        ]
+    }
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': token
+    }
+
+    response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
+    if response.raise_for_status():
+        logging.error("wolai-往数据表格中新增页面失败,Msg:{}".format(response.text))
+        return "往数据表格新增页面失败，请检查数据表格ID"
+    try:
+        page_id = response.json()['data'][0]
+        #  "https://www.wolai.com/thisispage_id6"
+        page_id = page_id.split("/")[-1]
+    except:
+        logging.error("wolai-从响应中解析page_id失败 Msg:{}".format(response.text))
+        return "响应解析错误,请检查ApI是否变动"
+
+    blocks = [{
+        "type": "text",
+        "content": f"system: \n- {system} \n"
+    },
+        {
+            "type": "divider",
+        },
+    ]
+    success_count = 0
+    fail_count = 0
+    for msg in history:
+        blocks.extend([
+            {
+                "type": "text", "content": msg['role'],
+            },
+            {
+                "type": "bull_list", "content": msg['content']
+            }]
+        )
+        if len(blocks) >= 15:
+            res = insert_wolai_page_blocks(token, page_id, blocks)
+            if res:
+                success_count += len(blocks)
+            else:
+                fail_count += len(blocks)
+            blocks = []
+    if len(blocks):
+        res = insert_wolai_page_blocks(token, page_id, blocks)
+        if res:
+            success_count += len(blocks)
+        else:
+            fail_count += len(blocks)
+
+    return "导出数据到wolai结束,成功插入{}个块,失败{}块".format(success_count,fail_count)

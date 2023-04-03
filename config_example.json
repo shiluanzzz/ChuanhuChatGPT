@@ -14,5 +14,7 @@
         "sk-xxxxxxxxxxxxxxxxxxxxxxxx1",
         "sk-xxxxxxxxxxxxxxxxxxxxxxxx2",
         "sk-xxxxxxxxxxxxxxxxxxxxxxxx3"
-    ]
+    ],
+    "wolai_token": "xxx",
+    "wolai_database_id": "12313"
 }

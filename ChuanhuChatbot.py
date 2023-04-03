@@ -157,6 +157,8 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                                 with gr.Column(scale=1):
                                     saveHistoryBtn = gr.Button("💾 保存对话")
                                     exportMarkdownBtn = gr.Button("📝 导出为Markdown")
+                                    if config.wolai_token:
+                                        exportHistory2Wolai = gr.Button("✂ 导出到Wolai")
                                     gr.Markdown("默认保存于history文件夹")
                             with gr.Row():
                                 with gr.Column():
@@ -202,7 +204,22 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                             lines=2,
                         )
                         changeProxyBtn = gr.Button("🔄 设置代理地址")
-
+                with gr.Tab(label='wolai'):
+                    gr.Markdown("## wolai设置")
+                    wolaiKey = gr.Textbox(
+                        show_label=True,
+                        placeholder=f"Token",
+                        label='我来Api Token',
+                        value=config.wolai_token,
+                        lines=1,
+                    )
+                    wolaiDatabaseId = gr.Textbox(
+                        show_label=True,
+                        placeholder=f"database id",
+                        label='wolai_database_id',
+                        value=config.wolai_database_id,
+                        lines=1,
+                    )
     gr.Markdown(description)
     gr.HTML(footer.format(versions=versions_html()), elem_id="footer")
     chatgpt_predict_args = dict(
@@ -352,6 +369,13 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
         downloadFile,
         show_progress=True,
     )
+    if wolai_token:
+        exportHistory2Wolai.click(
+            export_wolai,
+            [wolaiKey, wolaiDatabaseId, saveFileName, systemPromptTxt, history, chatbot, user_name],
+            [status_display],
+            show_progress=True
+        )
     historyRefreshBtn.click(get_history_names, [gr.State(False), user_name], [historyFileSelectDropdown])
     historyFileSelectDropdown.change(
         load_chat_history,
